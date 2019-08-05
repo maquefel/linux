@@ -350,8 +350,12 @@
 	flextimer1: flextimer@30640000 {
 		compatible = "fsl,imx7-ftm-pwm";
 		reg = <0x30640000 0x10000>;
-		clocks = <&clks IMX7D_FLEXTIMER1_ROOT_CLK>;
-		clock-names = "ftm_sys";
+		clock-names = "ftm_sys", "ftm_ext",
+			      "ftm_fix", "ftm_cnt_clk_en";
+		clocks = <&clks IMX7D_FLEXTIMER1_ROOT_CLK>,
+			<&clks IMX7D_CLK_DUMMY>,
+			<&clks IMX7D_CLK_DUMMY>,
+			<&clks IMX7D_CLK_DUMMY>;
 		interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL_HIGH>;
 		status = "disabled";
 	};
@@ -359,13 +363,17 @@
 	flextimer2: flextimer@30650000 {
 		compatible = "fsl,imx7-ftm-pwm";
 		reg = <0x30650000 0x10000>;
-		clocks = <&clks IMX7D_FLEXTIMER1_ROOT_CLK>;
-		clock-names = "ftm_sys";
+		clock-names = "ftm_sys", "ftm_ext",
+			      "ftm_fix", "ftm_cnt_clk_en";
+		clocks = <&clks IMX7D_FLEXTIMER2_ROOT_CLK>,
+			<&clks IMX7D_CLK_DUMMY>,
+			<&clks IMX7D_CLK_DUMMY>,
+			<&clks IMX7D_CLK_DUMMY>;
 		interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL_HIGH>;
 		status = "disabled";
 	};
 };
-/*
+
 &flextimer1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ftm1>;
@@ -377,7 +385,7 @@
 	pinctrl-0 = <&pinctrl_ftm2>;
 	status = "disabled";
 };
-*/
+
 /* The define SD_1_8 allows to use the SD interface at a higher speed mode
  * if the card supports it. For this the signaling voltage is switched from
  * 3.3V to 1.8V under the usdhc1's drivers control.

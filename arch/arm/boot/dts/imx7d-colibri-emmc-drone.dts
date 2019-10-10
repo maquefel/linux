@@ -122,13 +122,15 @@
 	clocks = <&clks IMX7D_ENET_AXI_ROOT_CLK>,
 		<&clks IMX7D_ENET_AXI_ROOT_CLK>,
 		<&clks IMX7D_ENET1_TIME_ROOT_CLK>,
-		<&clks IMX7D_PLL_ENET_MAIN_50M_CLK>;
-	clock-names = "ipg", "ahb", "ptp", "enet_clk_ref";
+		<&clks IMX7D_PLL_ENET_MAIN_50M_CLK>,
+		<&clks IMX7D_ENET1_REF_ROOT_DIV>;
+	clock-names = "ipg", "ahb", "ptp", "enet_clk_ref", "enet_out";
 
 	assigned-clocks = <&clks IMX7D_ENET1_TIME_ROOT_SRC>,
-			  <&clks IMX7D_ENET1_TIME_ROOT_CLK>;
+			  <&clks IMX7D_ENET1_TIME_ROOT_CLK>,
+			  <&clks IMX7D_ENET_PHY_REF_ROOT_DIV>;
 	assigned-clock-parents = <&clks IMX7D_PLL_ENET_MAIN_100M_CLK>;
-	assigned-clock-rates = <0>, <100000000>;
+	assigned-clock-rates = <0>, <100000000>, <50000000>;
 	phy-mode = "rmii";
 	phy-supply = <&reg_LDO1>;
 	phy-handle = <&ethphy0>;
@@ -608,7 +610,7 @@
 			MX7D_PAD_ENET1_RGMII_TD0__ENET1_RGMII_TD0	0x73
 			MX7D_PAD_ENET1_RGMII_TD1__ENET1_RGMII_TD1	0x73
 
-			MX7D_PAD_GPIO1_IO12__CCM_ENET_REF_CLK1		0x74
+			MX7D_PAD_GPIO1_IO12__CCM_ENET_REF_CLK1		0x40000074
 
 			MX7D_PAD_SD2_CD_B__ENET1_MDIO			0x30
 			MX7D_PAD_SD2_WP__ENET1_MDC			0x30

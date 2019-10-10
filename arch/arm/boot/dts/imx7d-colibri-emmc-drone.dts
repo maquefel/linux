@@ -38,17 +38,6 @@
 		regulator-max-microvolt = <5000000>;
 	};
 
-	reg_usbh_vbus: regulator-usbh-vbus {
-		compatible = "regulator-fixed";
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_usbh_reg>;
-		regulator-name = "VCC_USB[1-4]";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpio = <&gpio1 7 GPIO_ACTIVE_HIGH>;
-		vin-supply = <&reg_5v0>;
-	};
-
 	reg_module_3v3: regulator-module-3v3 {
 		compatible = "regulator-fixed";
 		regulator-name = "+V3.3";
@@ -82,6 +71,36 @@
 		compatible = "fsl, m4_tcml";
 		reg = <0x007f8000 0x8000>;
 	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&pinctrl_leds &pinctrl_lpsr_leds>;
+		pinctrl-names = "default";
+
+		debug {
+			label = "debug";
+			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+		};
+		led2 {
+			label = "led2";
+			gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+		};
+		led2_1 {
+			label = "led2_1";
+			gpios = <&gpio3 1 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+		};
+		led2_2 {
+			label = "led2_2";
+			gpios = <&gpio6 16 GPIO_ACTIVE_HIGH>;
+		};
+		led2_3 {
+			label = "led2_3";
+			gpios = <&gpio6 17 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
 };
 
 &adc1 {
@@ -495,14 +514,19 @@
 			MX7D_PAD_EPDC_GDOE__FLEXTIMER2_CH1		0x14 /* SODIMM 134 */
 			MX7D_PAD_EPDC_GDSP__FLEXTIMER2_CH3		0x14 /* SODIMM 104 */
 			MX7D_PAD_LCD_DATA20__FLEXTIMER2_CH4		0x14 /* SODIMM 140 */
-			MX7D_PAD_LCD_DATA21__FLEXTIMER2_CH5		0x14 /* SODIMM 142 */
 			MX7D_PAD_LCD_DATA22__FLEXTIMER2_CH6		0x14 /* SODIMM 144 */
 			MX7D_PAD_LCD_DATA23__FLEXTIMER2_CH7		0x14 /* SODIMM 146 */
 		>;
 	};
+	pinctrl_leds: gpio-led-grp {
+		fsl,pins = <
+			MX7D_PAD_LCD_ENABLE__GPIO3_IO1		0x14 /* SODIMM 44 */
+			MX7D_PAD_SAI1_RX_SYNC__GPIO6_IO16	0x14 /* SODIMM 77 */
+			MX7D_PAD_SAI1_RX_BCLK__GPIO6_IO17	0x14 /* SODIMM 24 */
+		>;
+	};
 	pinctrl_gpio1: gpio1-grp {
 		fsl,pins = <
-			MX7D_PAD_SAI1_RX_SYNC__GPIO6_IO16	0x14 /* SODIMM 77 */
 			MX7D_PAD_EPDC_DATA08__GPIO2_IO8		0x74 /* SODIMM 91 */
 			MX7D_PAD_LCD_RESET__GPIO3_IO4		0x14 /* SODIMM 93 */
 			MX7D_PAD_ENET1_RGMII_TXC__GPIO7_IO11	0x14 /* SODIMM 99 */
@@ -514,7 +538,7 @@
 			MX7D_PAD_EPDC_DATA05__GPIO2_IO5		0x14 /* SODIMM 121 */
 			MX7D_PAD_EPDC_DATA06__GPIO2_IO6		0x14 /* SODIMM 123 */
 			MX7D_PAD_EPDC_DATA07__GPIO2_IO7		0x14 /* SODIMM 125 */
-			MX7D_PAD_SAI1_RX_BCLK__GPIO6_IO17	0x14 /* SODIMM 24 */
+			MX7D_PAD_LCD_DATA21__GPIO3_IO26		0x14 /* SODIMM 142 */
 			MX7D_PAD_EPDC_BDR1__GPIO2_IO29		0x14 /* SODIMM 110 */
 			MX7D_PAD_EPDC_PWR_COM__GPIO2_IO30	0x14 /* SODIMM 112 */
 			MX7D_PAD_EPDC_PWR_STAT__GPIO2_IO31	0x14 /* SODIMM 128 */
@@ -530,6 +554,7 @@
 			MX7D_PAD_ECSPI1_MOSI__GPIO4_IO17	0x14 /* SODIMM 103 */
 		>;
 	};
+
 	pinctrl_ecspi3_cs: ecspi3-cs-grp {
 		fsl,pins = <
 			//MX7D_PAD_SAI2_TX_DATA__ECSPI3_SS0	0x14 /* SODIMM 34 */
@@ -583,7 +608,7 @@
 			MX7D_PAD_ENET1_RGMII_TD0__ENET1_RGMII_TD0	0x73
 			MX7D_PAD_ENET1_RGMII_TD1__ENET1_RGMII_TD1	0x73
 
-			MX7D_PAD_GPIO1_IO12__CCM_ENET_REF_CLK1		0x70
+			MX7D_PAD_GPIO1_IO12__CCM_ENET_REF_CLK1		0x74
 
 			MX7D_PAD_SD2_CD_B__ENET1_MDIO			0x30
 			MX7D_PAD_SD2_WP__ENET1_MDC			0x30
@@ -592,7 +617,7 @@
 
 	pinctrl_enet2: enet2grp {
 		fsl,pins = <
-			MX7D_PAD_EPDC_BDR0__CCM_ENET_REF_CLK2	0x40000071 /* SODIMM 106 */
+			MX7D_PAD_EPDC_BDR0__CCM_ENET_REF_CLK2	0x40000074 /* SODIMM 106 */
 			MX7D_PAD_EPDC_SDCE1__ENET2_RX_ER	0x73
 			MX7D_PAD_EPDC_SDCE0__ENET2_RGMII_RX_CTL 0x73
 			MX7D_PAD_EPDC_SDCLK__ENET2_RGMII_RD0	0x73
@@ -803,6 +828,11 @@
 	pinctrl_gpio_lpsr: gpio1-grp {
 		fsl,pins = <
 			MX7D_PAD_LPSR_GPIO1_IO02__GPIO1_IO2	0x14 /* SODIMM 135 */
+		>;
+	};
+	pinctrl_lpsr_leds: gpio1-led-grp {
+		fsl,pins = <
+			MX7D_PAD_LPSR_GPIO1_IO01__GPIO1_IO1	0x14 /* SODIMM 45 */
 			MX7D_PAD_LPSR_GPIO1_IO03__GPIO1_IO3	0x14 /* SODIMM 22 */
 		>;
 	};
@@ -810,12 +840,6 @@
 	pinctrl_usbh_reg: gpio-usbh-vbus {
 		fsl,pins = <
 			MX7D_PAD_LPSR_GPIO1_IO07__GPIO1_IO7	0x14 /* SODIMM 29 USBH PEN */
-		>;
-	};
-
-	pinctrl_gpiokeys: gpiokeysgrp {
-		fsl,pins = <
-			MX7D_PAD_LPSR_GPIO1_IO01__GPIO1_IO1	0x19
 		>;
 	};
 
@@ -840,13 +864,13 @@
 
 &usbotg1 {
 	extcon = <&extcon_usbc_det>, <&extcon_usbc_det>;
-	vbus-supply = <&reg_usbh_vbus>;
-	dr_mode = "otg";
+	vbus-supply = <&reg_5v0>;
+	dr_mode = "host";
 	status = "okay";
 };
 
 &usbotg2 {
-	vbus-supply = <&reg_usbh_vbus>;
+	vbus-supply = <&reg_5v0>;
 	dr_mode = "host";
 	status = "okay";
 };

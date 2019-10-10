@@ -70,6 +70,26 @@
 		gpio = <&gpio4 7 GPIO_ACTIVE_LOW>;
 		vin-supply = <&reg_5v0>;
 	};
+	
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		ocram: ocram@0x00900000 {
+			compatible = "shared-dma-pool";
+			reg = <0x00900000 0x20000>;
+			no-map;
+		};
+	};
+
+	imx7d-cm4 {
+		compatible    = "fsl,imx7d-cm4";
+		memory-region    = <&ocram>;
+		syscon        = <&src>;
+		clocks        = <&clks IMX7D_ARM_M4_ROOT_CLK>;
+	};
+
 };
 
 &bl {

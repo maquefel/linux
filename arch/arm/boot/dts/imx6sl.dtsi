@@ -115,6 +115,7 @@
 			compatible = "mmio-sram";
 			reg = <0x00900000 0x20000>;
 			clocks = <&clks IMX6SL_CLK_OCRAM>;
+			status = "disabled";
 		};
 
 		intc: interrupt-controller@a01000 {

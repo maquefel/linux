@@ -369,7 +369,7 @@
 
 &aips2 {
 	flextimer1: flextimer@30640000 {
-		compatible = "fsl,imx7-ftm-pwm";
+		compatible = "fsl,vf610-ftm-pwm";
 		reg = <0x30640000 0x10000>;
 		clock-names = "ftm_sys", "ftm_ext",
 			      "ftm_fix", "ftm_cnt_clk_en";
@@ -382,7 +382,7 @@
 	};
 
 	flextimer2: flextimer@30650000 {
-		compatible = "fsl,imx7-ftm-pwm";
+		compatible = "fsl,vf610-ftm-pwm";
 		reg = <0x30650000 0x10000>;
 		clock-names = "ftm_sys", "ftm_ext",
 			      "ftm_fix", "ftm_cnt_clk_en";

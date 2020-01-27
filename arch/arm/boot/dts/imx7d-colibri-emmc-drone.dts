@@ -404,7 +404,7 @@
 &flextimer2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ftm2>;
-	status = "disabled";
+	status = "okay";
 };
 
 /* The define SD_1_8 allows to use the SD interface at a higher speed mode

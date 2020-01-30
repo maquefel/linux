@@ -101,6 +101,15 @@
 		};
 	};
 
+	pps {
+		/*pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_pps>;*/
+
+		gpios = <&gpio4 22 GPIO_ACTIVE_HIGH>;
+		assert-falling-edge;
+
+		compatible = "pps-gpio";
+	};
 };
 
 &adc1 {

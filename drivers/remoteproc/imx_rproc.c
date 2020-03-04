@@ -45,6 +45,8 @@
 
 #define IMX7D_RPROC_MEM_MAX		8
 
+#define IMX_BOOT_PC			0x4
+
 /**
  * struct imx_rproc_mem - slim internal memory structure
  * @cpu_addr: MPU virtual address of the memory region
@@ -85,6 +87,7 @@ struct imx_rproc {
 	const struct imx_rproc_dcfg	*dcfg;
 	struct imx_rproc_mem		mem[IMX7D_RPROC_MEM_MAX];
 	struct clk			*clk;
+	void __iomem			*bootreg;
 };
 
 static const struct imx_rproc_att imx_rproc_att_imx7d[] = {
@@ -162,10 +165,15 @@ static int imx_rproc_start(struct rproc *rproc)
 	struct device *dev = priv->dev;
 	int ret;
 
+	/* write entry point to program counter */
+	writel(rproc->bootaddr, priv->bootreg);
+
 	ret = regmap_update_bits(priv->regmap, dcfg->src_reg,
 				 dcfg->src_mask, dcfg->src_start);
 	if (ret)
 		dev_err(dev, "Failed to enable M4!\n");
+
+	dev_info(&rproc->dev, "Started from 0x%x\n", rproc->bootaddr);
 
 	return ret;
 }
@@ -181,6 +189,9 @@ static int imx_rproc_stop(struct rproc *rproc)
 				 dcfg->src_mask, dcfg->src_stop);
 	if (ret)
 		dev_err(dev, "Failed to stop M4!\n");
+
+	/* clear entry points */
+	writel(0, priv->bootreg);
 
 	return ret;
 }
@@ -244,7 +255,8 @@ static void *imx_rproc_da_to_va(struct rproc *rproc, u64 da, size_t len)
 static const struct rproc_ops imx_rproc_ops = {
 	.start		= imx_rproc_start,
 	.stop		= imx_rproc_stop,
-	.da_to_va       = imx_rproc_da_to_va,
+	.da_to_va	= imx_rproc_da_to_va,
+	.get_boot_addr	= rproc_elf_get_boot_addr,
 };
 
 static int imx_rproc_addr_init(struct imx_rproc *priv,
@@ -360,6 +372,8 @@ static int imx_rproc_probe(struct platform_device *pdev)
 		ret = PTR_ERR(priv->clk);
 		goto err_put_rproc;
 	}
+
+	priv->bootreg = imx_rproc_da_to_va(rproc, IMX_BOOT_PC, sizeof(u32));
 
 	/*
 	 * clk for M4 block including memory. Should be

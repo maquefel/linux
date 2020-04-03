@@ -11,6 +11,7 @@
 #include <linux/module.h>
 #include <linux/of_address.h>
 #include <linux/of_device.h>
+#include <linux/of_reserved_mem.h>
 #include <linux/platform_device.h>
 #include <linux/regmap.h>
 #include <linux/remoteproc.h>
@@ -238,6 +239,29 @@ static int imx_rproc_da_to_sys(struct imx_rproc *priv, u64 da,
 	return -ENOENT;
 }
 
+static int imx_rproc_sys_to_da(struct imx_rproc *priv, u64 sys,
+				int len, u64 *da)
+{
+	const struct imx_rproc_dcfg *dcfg = priv->dcfg;
+	int i;
+
+	/* parse address translation table */
+	for (i = 0; i < dcfg->att_size; i++) {
+		const struct imx_rproc_att *att = &dcfg->att[i];
+
+		if (sys >= att->sa && sys + len <= att->sa + att->size) {
+			unsigned int offset = sys - att->sa;
+
+			*da = att->da + offset;
+			return 0;
+		}
+	}
+
+	dev_warn(priv->dev, "Translation failed: sys = 0x%llx len = 0x%x\n",
+			 sys, len);
+	return -ENOENT;
+}
+
 static void *imx_rproc_da_to_va(struct rproc *rproc, u64 da, size_t len)
 {
 	struct imx_rproc *priv = rproc->priv;
@@ -373,9 +397,98 @@ static void imx_rproc_kick(struct rproc *rproc, int vqid)
 		err = mbox_send_message(ddata->mb[i].chan, &vqid);
 		if (err < 0)
 			dev_err(&rproc->dev, "%s: failed (%s, err:%d)\n",
-					__func__, ddata->mb[i].name, err);
+				__func__, ddata->mb[i].name, err);
 			return;
 	}
+}
+
+static int imx_rproc_mem_alloc(struct rproc *rproc,
+				struct rproc_mem_entry *mem)
+{
+	struct device *dev = rproc->dev.parent;
+	void *va;
+
+	dev_dbg(dev, "map memory: %pa+%x\n", &mem->dma, mem->len);
+	va = ioremap_wc(mem->dma, mem->len);
+	if (IS_ERR_OR_NULL(va)) {
+		dev_err(dev, "Unable to map memory region: %pa+%x\n",
+				&mem->dma, mem->len);
+		return -ENOMEM;
+	}
+
+	/* Update memory entry va */
+	mem->va = va;
+
+	return 0;
+}
+
+static int imx_rproc_mem_release(struct rproc *rproc,
+				struct rproc_mem_entry *mem)
+{
+	dev_dbg(rproc->dev.parent, "unmap memory: %pa\n", &mem->dma);
+	iounmap(mem->va);
+
+	return 0;
+}
+
+static int imx_rproc_parse_fw(struct rproc *rproc, const struct firmware *fw)
+{
+	struct imx_rproc *priv = rproc->priv;
+	struct device *dev = rproc->dev.parent;
+	struct device_node *np = dev->of_node;
+	struct of_phandle_iterator it;
+	struct rproc_mem_entry *mem = 0;
+	struct reserved_mem *rmem;
+	u64 da;
+	int index = 0;
+
+	/* Register associated reserved memory regions */
+	of_phandle_iterator_init(&it, np, "memory-region", NULL, 0);
+	while (of_phandle_iterator_next(&it) == 0) {
+		rmem = of_reserved_mem_lookup(it.node);
+		if (!rmem) {
+			dev_err(dev, "unable to acquire memory-region\n");
+			return -EINVAL;
+		}
+
+		/*
+		 * Let's assume all data in device tree is from
+		 * CPU A7 point of view then we should translate
+		 * rmem->base into M4 da
+		 */
+		if (imx_rproc_sys_to_da(priv, rmem->base, rmem->size, &da)) {
+			dev_err(dev, "memory region not valid %pa\n",
+				&rmem->base);
+			return -EINVAL;
+		}
+
+		if (strcmp(it.node->name, "vdev0buffer")) {
+			/* Register memory region */
+			mem = rproc_mem_entry_init(dev, NULL,
+						(dma_addr_t)rmem->base,
+						rmem->size, da,
+						imx_rproc_mem_alloc,
+						imx_rproc_mem_release,
+						it.node->name);
+
+			if (mem)
+				rproc_coredump_add_segment(rproc, da,
+							rmem->size);
+		} else {
+			mem = rproc_of_resm_mem_entry_init(dev, index,
+							rmem->size,
+							rmem->base,
+							it.node->name);
+		}
+
+		if (!mem)
+			return -ENOMEM;
+
+		rproc_add_carveout(rproc, mem);
+		index++;
+	}
+
+	return rproc_elf_load_rsc_table(rproc, fw);
 }
 
 static const struct rproc_ops imx_rproc_ops = {
@@ -383,6 +496,10 @@ static const struct rproc_ops imx_rproc_ops = {
 	.stop		= imx_rproc_stop,
 	.da_to_va	= imx_rproc_da_to_va,
 	.kick		= imx_rproc_kick,
+	.load		= rproc_elf_load_segments,
+	.parse_fw	= imx_rproc_parse_fw,
+	.find_loaded_rsc_table = rproc_elf_find_loaded_rsc_table,
+	.sanity_check	= rproc_elf_sanity_check,
 	.get_boot_addr	= rproc_elf_get_boot_addr,
 };
 

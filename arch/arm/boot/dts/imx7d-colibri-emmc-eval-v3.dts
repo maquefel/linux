@@ -17,3 +17,7 @@
 	vbus-supply = <&reg_usbh_vbus>;
 	status = "okay";
 };
+
+&mu0a {
+	status = "okay";
+};

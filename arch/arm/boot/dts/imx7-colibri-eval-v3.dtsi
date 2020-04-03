@@ -81,13 +81,33 @@
 			reg = <0x00900000 0x20000>;
 			no-map;
 		};
+
+		vdev0vring0: vdev0vring0@00920000 {
+			compatible = "shared-dma-pool";
+			reg = <0x00920000 0x2000>;
+			no-map;
+		};
+
+		vdev0vring1: vdev0vring1@00922000 {
+			compatible = "shared-dma-pool";
+			reg = <0x00922000 0x2000>;
+			no-map;
+		};
+
+		vdev0buffer: vdev0buffer@00924000 {
+			compatible = "shared-dma-pool";
+			reg = <0x00924000 0x4000>;
+			no-map;
+		};
 	};
 
 	imx7d-cm4 {
-		compatible    = "fsl,imx7d-cm4";
-		memory-region    = <&ocram>;
-		syscon        = <&src>;
-		clocks        = <&clks IMX7D_ARM_M4_ROOT_CLK>;
+		compatible = "fsl,imx7d-cm4";
+		memory-region = <&ocram>, <&vdev0vring0>, <&vdev0vring1>, <&vdev0buffer>;
+		syscon = <&src>;
+		clocks = <&clks IMX7D_ARM_M4_ROOT_CLK>;
+		mboxes = <&mu0a 1 1>, <&mu0a 0 1>;
+		mbox-names = "vq0", "vq1";
 	};
 
 };

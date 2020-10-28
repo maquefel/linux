@@ -284,6 +284,21 @@
 	clock-frequency = <400000>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c2 &pinctrl_i2c2_lpsr>;
+
+	ads1115@48 {
+        compatible = "ti,ads1115";
+        reg = <0x48>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        channel@5 {
+                reg = <5>;
+                ti,gain = <1>;
+                ti,datarate = <5>;
+        };
+};
+
+
 };
 
 &i2c3 {

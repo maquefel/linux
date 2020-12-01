@@ -88,6 +88,8 @@ ENTRY(stext)
 	@ ensure svc mode and all interrupts masked
 	safe_svcmode_maskall r9
 
+	ldr	r1, =0x2a1
+
 	mrc	p15, 0, r9, c0, c0		@ get processor id
 	bl	__lookup_processor_type		@ r5=procinfo r9=cpuid
 	movs	r10, r5				@ invalid processor (r5=0)?

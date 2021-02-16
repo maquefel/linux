@@ -59,7 +59,6 @@ DT_MACHINE_START(EP93XX_DT, "EP93XX (Device Tree)")
 	.nr_irqs	= NR_EP93XX_IRQS,
 	.map_io		= ts72xx_map_io,
 	.init_irq	= ep93xx_init_irq,
-	.init_time	= ep93xx_timer_init,
 	.init_machine	= ts72xx_init_machine,
 	.init_late	= ep93xx_init_late,
 	.restart	= ep93xx_restart,

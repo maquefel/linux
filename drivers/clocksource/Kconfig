@@ -728,4 +728,14 @@ config MICROCHIP_PIT64B
 	  modes and high resolution. It is used as a clocksource
 	  and a clockevent.
 
+config EP93XX_TIMER
+	bool "Cirrus Logic ep93xx timer driver"
+	depends on OF || HAS_IOMEM || COMPILE_TEST 
+	select CLKSRC_MMIO
+	select TIMER_OF
+	select MFD_SYSCON
+	help
+	  Enables support for the Cirrus Logic timer block
+	  EP93XX.
+
 endmenu

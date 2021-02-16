@@ -2,7 +2,6 @@
 /*
  * Device Tree file for Cirrus Logic systems EP93XX SoC
  */
-
 / {
 	compatible = "cirrus,ep93xx";
 
@@ -11,5 +10,10 @@
 		#size-cells = <1>;
 		ranges;
 		compatible = "simple-bus";
+		
+		timer@fed10000 {
+			compatible = "cirrus,ep93xx-timer";
+			reg = <0xfed10000 0x100>;
+		};
 	};
 };

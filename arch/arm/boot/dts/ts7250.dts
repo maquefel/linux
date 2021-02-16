@@ -1,0 +1,11 @@
+/dts-v1/;
+#include "ep93xx.dtsi"
+
+/ {
+        model = "TS-7250 SBC";
+        compatible = "cirrus,ep93xx", "technologic,ts7250";
+        
+	memory {
+		device_type = "memory";
+	};
+};

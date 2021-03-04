@@ -1,16 +1,26 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  * Device Tree file for Cirrus Logic systems EP93XX SoC
+ * 0x80930000
+ * 0xfee30000
  */
 / {
 	compatible = "cirrus,ep93xx";
 
-	soc {
+	amba {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges;
 		compatible = "simple-bus";
-		
+
+		syscon: syscon@80930000 {
+			compatible = "cirrus,ep93xx-syscon",
+			"syscon", "simple-mfd";
+			reg = <0x80930000 0x1000>;
+			#clock-cells = <1>;
+			#reset-cells = <1>;
+		};
+
 		timer@fed10000 {
 			compatible = "cirrus,ep93xx-timer";
 			reg = <0xfed10000 0x100>;

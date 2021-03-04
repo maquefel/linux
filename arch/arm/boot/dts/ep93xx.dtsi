@@ -21,6 +21,20 @@
 			#reset-cells = <1>;
 		};
 
+		vic0: interrupt-controller@800b0000 {
+			compatible = "arm,pl192-vic";
+			interrupt-controller;
+			reg = <0x800b0000 0x1000>;
+			#interrupt-cells = <1>;
+		};
+
+		vic1: interrupt-controller@800c0000 {
+			compatible = "arm,pl192-vic";
+			interrupt-controller;
+			reg = <0x800c0000 0x1000>;
+			#interrupt-cells = <1>;
+		};
+
 		timer@fed10000 {
 			compatible = "cirrus,ep93xx-timer";
 			reg = <0xfed10000 0x100>;

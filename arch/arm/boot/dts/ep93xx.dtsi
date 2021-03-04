@@ -35,9 +35,11 @@
 			#interrupt-cells = <1>;
 		};
 
-		timer@fed10000 {
+		timer@80810000 {
 			compatible = "cirrus,ep93xx-timer";
-			reg = <0xfed10000 0x100>;
+			reg = <0x80810000 0x100>;
+			interrupt-parent = <&vic1>;
+			interrupts = <0 19>;
 		};
 	};
 };

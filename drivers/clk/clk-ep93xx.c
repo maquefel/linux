@@ -868,17 +868,7 @@ static void __init ep93xx_clock_init(struct device_node *np)
 	hw = clk_hw_register_fixed_rate(NULL, "pll2", "xtali", 0, clk_pll2_rate);
 	ep93xx_clk_data->hws[EP93XX_CLK_PLL2] = hw;
 
-	/* Initialize the pll2 derived clocks */
-	// clk_usb_host.rate = clk_pll2.rate / (((value >> 28) & 0xf) + 1);
-
-	/*
-	 * EP93xx SSP clock rate was doubled in version E2. For more information
-	 * see:
-	 *     http://www.cirrus.com/en/pubs/appNote/AN273REV4.pdf
-	 */
-	if (ep93xx_chip_revision() < EP93XX_CHIP_REV_E2)
-		clk_spi.rate /= 2;
-
+	ep93xx_clk_data->num = EP93XX_NUM_CLKS;
 	of_clk_add_hw_provider(np, of_clk_hw_onecell_get, ep93xx_clk_data);
 
 	pr_info("PLL1 running at %ld MHz, PLL2 at %ld MHz\n",

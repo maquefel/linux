@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * Clock control for Cirrus EP93xx chips.
+ * Cirrus Logic EP93xx timer driver.
  * Copyright (C) 2021 Nikita Shubin <nikita.shubin@maquefel.me>
  *
  * Based on a rewrite of arch/arm/mach-ep93xx/timer.c:
@@ -81,7 +81,7 @@ static u64 ep93xx_clocksource_read(struct clocksource *c)
 {
 	struct ep93xx_tcu *tcu = ep93xx_tcu;
 	u64 ret;
-	
+
 	ret = readl(tcu->base + EP93XX_TIMER4_VALUE_LOW);
 	ret |= ((u64) (readl(tcu->base + EP93XX_TIMER4_VALUE_HIGH) & 0xff) << 32);
 	return (u64) ret;
@@ -94,10 +94,10 @@ static int ep93xx_clkevt_set_next_event(unsigned long next,
 	/* Default mode: periodic, off, 508 kHz */
 	u32 tmode = EP93XX_TIMER123_CONTROL_MODE |
 	EP93XX_TIMER123_CONTROL_CLKSEL;
-	
+
 	/* Clear timer */
 	writel(tmode, tcu->base + EP93XX_TIMER3_CONTROL);
-	
+
 	/* Set next event */
 	writel(next, tcu->base + EP93XX_TIMER3_LOAD);
 	writel(tmode | EP93XX_TIMER123_CONTROL_ENABLE,
@@ -105,13 +105,12 @@ static int ep93xx_clkevt_set_next_event(unsigned long next,
 	return 0;
 }
 
-
 static int ep93xx_clkevt_shutdown(struct clock_event_device *evt)
 {
 	struct ep93xx_tcu *tcu = ep93xx_tcu;
 	/* Disable timer */
 	writel(0, tcu->base + EP93XX_TIMER3_CONTROL);
-	
+
 	return 0;
 }
 
@@ -129,12 +128,12 @@ static irqreturn_t ep93xx_timer_interrupt(int irq, void *dev_id)
 {
 	struct ep93xx_tcu *tcu = ep93xx_tcu;
 	struct clock_event_device *evt = dev_id;
-	
+
 	/* Writing any value clears the timer interrupt */
 	writel(1, tcu->base + EP93XX_TIMER3_CLEAR);
-	
+
 	evt->event_handler(evt);
-	
+
 	return IRQ_HANDLED;
 }
 
@@ -148,7 +147,7 @@ static int __init ep93xx_timer_of_init(struct device_node *np)
 	tcu = kzalloc(sizeof(*tcu), GFP_KERNEL);
 	if (!tcu)
 		return -ENOMEM;
-	
+
 	tcu->base = of_iomap(np, 0);
 	if (!tcu->base) {
 		pr_err("Can't remap registers\n");
@@ -156,10 +155,9 @@ static int __init ep93xx_timer_of_init(struct device_node *np)
 		goto out_free;
 	}
 
-	ep93xx_tcu = tcu;	
-	pr_info("%s : base=0x%px\n", __func__, tcu->base);
-	
-	irq = irq_of_parse_and_map(np, 1);
+	ep93xx_tcu = tcu;
+
+	irq = irq_of_parse_and_map(np, 0);
 	if (irq <= 0) {
 		pr_err("ERROR: invalid interrupt number\n");
 		ret = -EINVAL;
@@ -174,7 +172,7 @@ static int __init ep93xx_timer_of_init(struct device_node *np)
 				ep93xx_clocksource_read);
 	sched_clock_register(ep93xx_read_sched_clock, 40,
 			     EP93XX_TIMER4_RATE);
-	
+
 	/* Set up clockevent on timer 3 */
 	if (request_irq(irq, ep93xx_timer_interrupt, flags, "ep93xx timer",
 		&ep93xx_clockevent))
@@ -185,7 +183,7 @@ static int __init ep93xx_timer_of_init(struct device_node *np)
 				0xffffffffU);
 
 	return 0;
-	
+
 	out_free:
 	kfree(tcu);
 	return ret;

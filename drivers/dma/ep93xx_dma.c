@@ -20,6 +20,7 @@
 #include <linux/dmaengine.h>
 #include <linux/module.h>
 #include <linux/mod_devicetable.h>
+#include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
 
@@ -103,6 +104,11 @@
 
 #define DMA_MAX_CHAN_BYTES		0xffff
 #define DMA_MAX_CHAN_DESCRIPTORS	32
+
+enum ep93xx_dma_type {
+	M2P_DMA,
+	M2M_DMA,
+}; 
 
 struct ep93xx_dma_engine;
 static int ep93xx_dma_slave_config_write(struct dma_chan *chan,
@@ -1410,6 +1416,15 @@ static int __init ep93xx_dma_probe(struct platform_device *pdev)
 	return ret;
 }
 
+#ifdef CONFIG_OF
+static const struct of_device_id ep93xx_dma_of_ids[] = {
+	{ .compatible = "cirrus,ep93xx-dma-m2p", .data = (const void *)M2P_DMA },
+	{ .compatible = "cirrus,ep93xx-dma-m2m", .data = (const void *)M2M_DMA },
+	{},
+};
+MODULE_DEVICE_TABLE(of, ep93xx_dma_of_ids);
+#endif
+
 static const struct platform_device_id ep93xx_dma_driver_ids[] = {
 	{ "ep93xx-dma-m2p", 0 },
 	{ "ep93xx-dma-m2m", 1 },
@@ -1419,6 +1434,7 @@ static const struct platform_device_id ep93xx_dma_driver_ids[] = {
 static struct platform_driver ep93xx_dma_driver = {
 	.driver		= {
 		.name	= "ep93xx-dma",
+		.of_match_table = of_match_ptr(ep93xx_dma_of_ids),
 	},
 	.id_table	= ep93xx_dma_driver_ids,
 };

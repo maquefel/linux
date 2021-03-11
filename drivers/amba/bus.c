@@ -269,7 +269,8 @@ static int amba_probe(struct device *dev)
 		ret = dev_pm_domain_attach(dev, true);
 		if (ret)
 			break;
-
+		
+		pr_err("%s : 1\n", __func__);
 		ret = amba_get_enable_pclk(pcdev);
 		if (ret) {
 			dev_pm_domain_detach(dev, true);

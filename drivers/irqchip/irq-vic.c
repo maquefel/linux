@@ -186,6 +186,8 @@ static int vic_irqdomain_map(struct irq_domain *d, unsigned int irq,
 {
 	struct vic_device *v = d->host_data;
 
+	printk(KERN_WARNING "%s : irq=%d, hwirq=%ld\n", __func__, irq, hwirq);
+
 	/* Skip invalid IRQs, only register handlers for the real ones */
 	if (!(v->valid_sources & (1 << hwirq)))
 		return -EPERM;

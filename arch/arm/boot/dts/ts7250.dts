@@ -9,3 +9,12 @@
 		device_type = "memory";
 	};
 };
+
+&eth0 {
+	copy_addr;
+	phy_id = < 1 >;
+};
+
+&uart0 {
+	status = "okay";
+};

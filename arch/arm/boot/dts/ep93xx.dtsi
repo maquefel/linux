@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  * Device Tree file for Cirrus Logic systems EP93XX SoC
- * 0x80930000
- * 0xfee30000
  */
+#include <dt-bindings/clock/cirrus,ep93xx-clock.h>
 / {
 	compatible = "cirrus,ep93xx";
 
@@ -19,6 +18,15 @@
 			reg = <0x80930000 0x1000>;
 			#clock-cells = <1>;
 			#reset-cells = <1>;
+			
+			syscon-reboot {
+				compatible = "syscon-reboot";
+				regmap = <&syscon>;
+				/* GLOBAL_RESET register */
+				offset = <0x80>;
+				/* RESET_GLOBAL | RESET_CPU1 */
+				mask = <0x80000000>;
+			};
 		};
 
 		vic0: interrupt-controller@800b0000 {
@@ -26,6 +34,8 @@
 			interrupt-controller;
 			reg = <0x800b0000 0x1000>;
 			#interrupt-cells = <1>;
+			valid-mask = <0x7ffffffc>;
+			valid-wakeup-mask = <0x0>;
 		};
 
 		vic1: interrupt-controller@800c0000 {
@@ -33,13 +43,55 @@
 			interrupt-controller;
 			reg = <0x800c0000 0x1000>;
 			#interrupt-cells = <1>;
+			valid-mask = <0x1fffffff>;
+			valid-wakeup-mask = <0x0>;
 		};
 
 		timer@80810000 {
 			compatible = "cirrus,ep93xx-timer";
 			reg = <0x80810000 0x100>;
 			interrupt-parent = <&vic1>;
-			interrupts = <0 19>;
+			interrupts = <19>;
+		};
+
+		uart0: uart@808c0000 {
+			compatible = "arm,pl010", "arm,primecell";
+			reg = <0x808c0000 0x1000>;
+			arm,primecell-periphid = <0x00041010>;
+			clocks = <&syscon EP93XX_CLK_UART1>, <&syscon EP93XX_CLK_UART>;
+			clock-names = "apb:uart1", "apb_pclk";
+			interrupt-parent = <&vic1>;
+			interrupts = <20>;
+			status = "disabled";
+		};
+
+		uart1: uart@808d0000 {
+			compatible = "arm,pl010", "arm,primecell";
+			reg = <0x808d0000 0x1000>;
+			arm,primecell-periphid = <0x00041010>;
+			clocks = <&syscon EP93XX_CLK_UART2>, <&syscon EP93XX_CLK_UART>;
+			clock-names = "apb:uart2", "apb_pclk";
+			interrupt-parent = <&vic1>;
+			interrupts = <22>;
+			status = "disabled";
+		};
+
+		uart2: uart@808b0000 {
+			compatible = "arm,pl010", "arm,primecell";
+			reg = <0x808b0000 0x1000>;
+			arm,primecell-periphid = <0x00041010>;
+			clocks = <&syscon EP93XX_CLK_UART3>, <&syscon EP93XX_CLK_UART>;
+			clock-names = "apb:uart3", "apb_pclk";
+			interrupt-parent = <&vic1>;
+			interrupts = <23>;
+			status = "disabled";
+		};
+
+		eth0: eth@80010000 {
+			compatible = "cirrus,ep93xx-eth";
+			reg = <0x80010000 0x10000>;
+			interrupt-parent = <&vic1>;
+			interrupts = <7>;
 		};
 	};
 };

@@ -2,15 +2,12 @@
 #
 # Makefile for the linux kernel.
 #
-obj-y			:= core.o timer-ep93xx.o
-
 ifeq ($(CONFIG_OF),y)
 obj-y			+= board-dt.o
 endif
 
 ifneq ($(CONFIG_OF),y)
-obj-y			+= clock.o ts72xx.o
-endif
+obj-y			+= core.o clock.o ts72xx.o timer-ep93xx.o
 
 obj-$(CONFIG_EP93XX_DMA)	+= dma.o
 
@@ -24,3 +21,4 @@ obj-$(CONFIG_MACH_MICRO9)	+= micro9.o
 obj-$(CONFIG_MACH_SIM_ONE)	+= simone.o
 obj-$(CONFIG_MACH_SNAPPER_CL15)	+= snappercl15.o
 obj-$(CONFIG_MACH_VISION_EP9307)+= vision_ep9307.o
+endif

@@ -231,6 +231,14 @@ static int ep93xx_adc_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#ifdef CONFIG_OF
+static const struct of_device_id ep93xx_adc_of_ids[] = {
+	{ .compatible = "cirrus,ep93xx-adc" },
+	{},
+};
+MODULE_DEVICE_TABLE(of, ep93xx_adc_of_ids);
+#endif
+
 static struct platform_driver ep93xx_adc_driver = {
 	.driver = {
 		.name = "ep93xx-adc",

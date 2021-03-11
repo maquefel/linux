@@ -17,6 +17,8 @@
 #include <linux/interrupt.h>
 #include <linux/moduleparam.h>
 #include <linux/platform_device.h>
+#include <linux/of.h>
+#include <linux/of_platform.h>
 #include <linux/delay.h>
 #include <linux/io.h>
 #include <linux/slab.h>
@@ -786,12 +788,20 @@ static int ep93xx_eth_remove(struct platform_device *pdev)
 	return 0;
 }
 
+/** @todo ep93xx_eth_data
+ * switch to DT completely ?
+ * phy_id
+ * dev_addr
+ * copy_addr
+ */
 static int ep93xx_eth_probe(struct platform_device *pdev)
 {
 	struct ep93xx_eth_data *data;
 	struct net_device *dev;
 	struct ep93xx_priv *ep;
 	struct resource *mem;
+	void __iomem *base_addr;
+	struct device_node *np;
 	int irq;
 	int err;
 
@@ -800,9 +810,42 @@ static int ep93xx_eth_probe(struct platform_device *pdev)
 	data = dev_get_platdata(&pdev->dev);
 
 	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	dev_err(&pdev->dev, "base: 0x%x\n", mem->start);
 	irq = platform_get_irq(pdev, 0);
+	dev_err(&pdev->dev, "irq: %d\n", irq);
 	if (!mem || irq < 0)
 		return -ENXIO;
+
+	base_addr = ioremap(mem->start, resource_size(mem));
+	if (base_addr == NULL) {
+		dev_err(&pdev->dev, "Failed to ioremap ethernet registers\n");
+		return -EIO;
+	}
+	
+	if(!data) {
+		np = pdev->dev.of_node;
+		if (IS_ENABLED(CONFIG_OF) && np) {
+			u32 phy_id;
+			data = devm_kzalloc(&pdev->dev, sizeof(*data), GFP_KERNEL);
+			if(!data)
+				return -ENOMEM;
+			
+			if (of_property_read_bool(np, "copy_addr")) {
+				memcpy_fromio(data->dev_addr, base_addr + 0x50, 6);
+				dev_info(&pdev->dev, "MAC=%pM\n", data->dev_addr);
+			}
+			
+			if (of_property_read_u32(np, "phy_id", &phy_id)) {
+				dev_err(&pdev->dev, "Failed to parse \"phy_id\"\n");
+				return -ENOENT;
+			}
+			
+			data->phy_id = phy_id;
+		}
+	}
+	
+	if(!data)
+		return -ENOENT;
 
 	dev = ep93xx_dev_alloc(data);
 	if (dev == NULL) {
@@ -824,12 +867,7 @@ static int ep93xx_eth_probe(struct platform_device *pdev)
 		goto err_out;
 	}
 
-	ep->base_addr = ioremap(mem->start, resource_size(mem));
-	if (ep->base_addr == NULL) {
-		dev_err(&pdev->dev, "Failed to ioremap ethernet registers\n");
-		err = -EIO;
-		goto err_out;
-	}
+	ep->base_addr = base_addr;
 	ep->irq = irq;
 
 	ep->mii.phy_id = data->phy_id;
@@ -859,12 +897,20 @@ err_out:
 	return err;
 }
 
+#ifdef CONFIG_OF
+static const struct of_device_id ep93xx_eth_of_ids[] = {
+	{ .compatible = "cirrus,ep93xx-eth" },
+	{},
+};
+MODULE_DEVICE_TABLE(of, ep93xx_eth_of_ids);
+#endif
 
 static struct platform_driver ep93xx_eth_driver = {
 	.probe		= ep93xx_eth_probe,
 	.remove		= ep93xx_eth_remove,
 	.driver		= {
 		.name	= "ep93xx-eth",
+		.of_match_table = of_match_ptr(ep93xx_eth_of_ids),
 	},
 };
 

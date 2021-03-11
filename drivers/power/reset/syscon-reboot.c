@@ -32,10 +32,11 @@ static int syscon_restart_handle(struct notifier_block *this,
 
 	/* Issue the reboot */
 	regmap_update_bits(ctx->map, ctx->offset, ctx->mask, ctx->value);
+	regmap_clear_bits(ctx->map, ctx->offset, ctx->value);
 
 	mdelay(1000);
 
-	pr_emerg("Unable to restart system\n");
+	pr_emerg("%s : Unable to restart system offset=0x%x, mask=0x%x, value=0x%x\n", __func__, ctx->offset, ctx->mask, ctx->value);
 	return NOTIFY_DONE;
 }
 

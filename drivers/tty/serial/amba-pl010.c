@@ -696,6 +696,8 @@ static int pl010_probe(struct amba_device *dev, const struct amba_id *id)
 	struct uart_amba_port *uap;
 	void __iomem *base;
 	int i, ret;
+	
+	pr_err("%s\n", __func__);
 
 	for (i = 0; i < ARRAY_SIZE(amba_ports); i++)
 		if (amba_ports[i] == NULL)

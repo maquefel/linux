@@ -21,6 +21,7 @@
  * daemon dies.
  */
 
+#include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/module.h>
 #include <linux/watchdog.h>
@@ -130,9 +131,18 @@ static int ep93xx_wdt_probe(struct platform_device *pdev)
 	return 0;
 }
 
+#ifdef CONFIG_OF
+static const struct of_device_id ep93xx_wdt_of_ids[] = {
+	{ .compatible = "cirrus,ep93xx-wdt" },
+	{},
+};
+MODULE_DEVICE_TABLE(of, ep93xx_wdt_of_ids);
+#endif
+
 static struct platform_driver ep93xx_wdt_driver = {
 	.driver		= {
 		.name	= "ep93xx-wdt",
+		.of_match_table = of_match_ptr(ep93xx_wdt_of_ids),
 	},
 	.probe		= ep93xx_wdt_probe,
 };

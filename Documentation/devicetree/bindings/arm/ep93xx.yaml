@@ -1,0 +1,85 @@
+# SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/arm/ep93xx.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Cirrus Logick EP93xx device tree bindings
+
+maintainers:
+  - Nikita Shubin <nikita.shubin@maquefel.me>
+
+description: |+
+  The EP93xx SoC is a ARMv4T-based with 200 MHz ARM9 CPU.
+
+properties:
+  $nodename:
+    const: '/'
+  compatible:
+    const: cirrus,ep93xx
+
+  soc:
+    type: object
+    properties:
+      compatible:
+        const: syscon
+
+      syscon:
+        type: object
+        properties:
+          compatible:
+            items:
+              - const: cirrus,ep93xx-syscon
+              - const: syscon
+              - const: simple-mfd
+        required:
+          - compatible
+          - reg
+          - '#clock-cells'
+
+      timer:
+        type: object
+
+    required:
+      - compatible
+      - syscon
+      - timer
+
+required:
+  - compatible
+  - soc
+
+additionalProperties: true
+
+examples:
+  - |
+    #include <dt-bindings/clock/cirrus,ep93xx-clock.h>
+    / {
+      compatible = "cirrus,ep93xx";
+
+    soc {
+      #address-cells = <1>;
+      #size-cells = <1>;
+      ranges;
+      compatible = "simple-bus";
+
+      syscon: syscon@80930000 {
+        compatible = "cirrus,ep93xx-syscon",
+        "syscon", "simple-mfd";
+        reg = <0x80930000 0x1000>;
+        #clock-cells = <1>;
+        #reset-cells = <1>;
+
+        ep93xx-reboot {
+          compatible = "cirrus,ep93xx-reboot";
+        };
+
+        timer@80810000 {
+          compatible = "cirrus,ep93xx-timer";
+          reg = <0x80810000 0x100>;
+          interrupt-parent = <&vic1>;
+          interrupts = <19>;
+        };
+    };
+
+...

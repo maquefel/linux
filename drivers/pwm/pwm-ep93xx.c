@@ -17,6 +17,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <linux/clk.h>
@@ -203,9 +204,18 @@ static int ep93xx_pwm_remove(struct platform_device *pdev)
 	return pwmchip_remove(&ep93xx_pwm->chip);
 }
 
+#ifdef CONFIG_OF
+static const struct of_device_id ep93xx_pwm_of_ids[] = {
+	{ .compatible = "cirrus,ep93xx-pwm" },
+	{},
+};
+MODULE_DEVICE_TABLE(of, ep93xx_pwm_of_ids);
+#endif
+
 static struct platform_driver ep93xx_pwm_driver = {
 	.driver = {
 		.name = "ep93xx-pwm",
+		.of_match_table = of_match_ptr(ep93xx_pwm_of_ids),
 	},
 	.probe = ep93xx_pwm_probe,
 	.remove = ep93xx_pwm_remove,

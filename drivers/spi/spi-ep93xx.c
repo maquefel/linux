@@ -22,11 +22,13 @@
 #include <linux/bitops.h>
 #include <linux/interrupt.h>
 #include <linux/module.h>
+#include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/sched.h>
 #include <linux/scatterlist.h>
 #include <linux/spi/spi.h>
 
+#include <linux/ep93xx.h>
 #include <linux/platform_data/dma-ep93xx.h>
 #include <linux/platform_data/spi-ep93xx.h>
 
@@ -644,6 +646,27 @@ static void ep93xx_spi_release_dma(struct ep93xx_spi *espi)
 		free_page((unsigned long)espi->zeropage);
 }
 
+#ifdef CONFIG_OF
+static struct ep93xx_spi_info dt_spi_info;
+
+static struct ep93xx_spi_info * ep93xx_spi_get_platdata(struct platform_device *pdev)
+{
+	struct device_node *np = pdev->dev.of_node;
+	if (np && of_property_read_bool(np, "use_dma"))
+		dt_spi_info.use_dma = 1;
+
+	ep93xx_devcfg_set_clear(0x00, EP93XX_SYSCON_DEVCFG_I2SONSSP, EP93XX_SYSCON_DEVCFG);
+	// ep93xx_devcfg_clear_bits(EP93XX_SYSCON_DEVCFG_I2SONSSP);
+
+	return &dt_spi_info;
+}
+#else
+static struct ep93xx_spi_info * ep93xx_spi_get_platdata(struct platform_device *pdev)
+{
+	return dev_get_platdata(&pdev->dev);
+}
+#endif
+
 static int ep93xx_spi_probe(struct platform_device *pdev)
 {
 	struct spi_master *master;
@@ -653,7 +676,7 @@ static int ep93xx_spi_probe(struct platform_device *pdev)
 	int irq;
 	int error;
 
-	info = dev_get_platdata(&pdev->dev);
+	info = ep93xx_spi_get_platdata(pdev);
 	if (!info) {
 		dev_err(&pdev->dev, "missing platform data\n");
 		return -EINVAL;
@@ -726,6 +749,10 @@ static int ep93xx_spi_probe(struct platform_device *pdev)
 	/* make sure that the hardware is disabled */
 	writel(0, espi->mmio + SSPCR1);
 
+#ifdef CONFIG_OF
+        master->dev.of_node = pdev->dev.of_node;
+#endif
+
 	error = devm_spi_register_master(&pdev->dev, master);
 	if (error) {
 		dev_err(&pdev->dev, "failed to register SPI master\n");
@@ -755,9 +782,18 @@ static int ep93xx_spi_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#ifdef CONFIG_OF
+static const struct of_device_id ep93xx_spi_of_ids[] = {
+	{ .compatible = "cirrus,ep93xx-spi" },
+	{},
+};
+MODULE_DEVICE_TABLE(of, ep93xx_spi_of_ids);
+#endif
+
 static struct platform_driver ep93xx_spi_driver = {
 	.driver		= {
 		.name	= "ep93xx-spi",
+		.of_match_table = of_match_ptr(ep93xx_spi_of_ids),
 	},
 	.probe		= ep93xx_spi_probe,
 	.remove		= ep93xx_spi_remove,

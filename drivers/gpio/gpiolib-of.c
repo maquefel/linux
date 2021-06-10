@@ -38,6 +38,9 @@
 static int of_gpio_spi_cs_get_count(struct device *dev, const char *con_id)
 {
 	struct device_node *np = dev->of_node;
+	int num;
+
+	pr_err("%s\n", __func__);
 
 	if (!IS_ENABLED(CONFIG_SPI_MASTER))
 		return 0;
@@ -47,7 +50,11 @@ static int of_gpio_spi_cs_get_count(struct device *dev, const char *con_id)
 	    !of_device_is_compatible(np, "aeroflexgaisler,spictrl") &&
 	    !of_device_is_compatible(np, "ibm,ppc4xx-spi"))
 		return 0;
-	return of_gpio_named_count(np, "gpios");
+	num = of_gpio_named_count(np, "gpios");
+
+	pr_err("%s of_gpio_named_count=%d\n", __func__, num);
+
+	return num;
 }
 
 /*
@@ -61,6 +68,8 @@ int of_gpio_get_count(struct device *dev, const char *con_id)
 	int ret;
 	char propname[32];
 	unsigned int i;
+
+	pr_err("%s : fucky fucky\n", __func__);
 
 	ret = of_gpio_spi_cs_get_count(dev, con_id);
 	if (ret > 0)
@@ -851,6 +860,7 @@ int of_mm_gpiochip_add_data(struct device_node *np,
 	struct gpio_chip *gc = &mm_gc->gc;
 
 	gc->label = kasprintf(GFP_KERNEL, "%pOF", np);
+	pr_debug("%s gc->label=%s\n", __func__, gc->label);
 	if (!gc->label)
 		goto err0;
 

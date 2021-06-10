@@ -8,6 +8,32 @@
 	memory {
 		device_type = "memory";
 	};
+
+	nand-parts@0 {
+		compatible = "technologic,ts72xx-nand", "gen_nand";
+		// compatible = "gen_nand";
+		reg = <0x60000000 0x8000000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+                partition@0 {
+                	label = "TS-BOOTROM";
+                        reg = <0x00000000 0x00020000>;
+                        read-only;
+                };
+                
+		partition@20000 {
+                        label = "Linux";
+                        reg = <0x00020000 0x07d00000>;
+                        read-only;
+                };
+
+                partition@7d20000 {
+                        label = "RedBoot";
+			reg = <0x07d20000 0x002e0000>;
+                        read-only;
+                };
+	};
 };
 
 &eth0 {

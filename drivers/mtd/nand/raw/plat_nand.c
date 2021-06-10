@@ -45,6 +45,8 @@ static int plat_nand_probe(struct platform_device *pdev)
 	const char **part_types;
 	int err = 0;
 
+	printk("%s\n", __func__);
+
 	if (!pdata) {
 		dev_err(&pdev->dev, "platform_nand_data is missing\n");
 		return -EINVAL;

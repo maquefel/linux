@@ -461,6 +461,14 @@ config MTD_NAND_ROCKCHIP
 	    NFC v800: RK3308, RV1108
 	    NFC v900: PX30, RK3326
 
+config MTD_NAND_TS72XX
+	bool "ts72xx NAND controller"
+	depends on ARCH_EP93XX && HAS_IOMEM
+	select MTD_NAND_PLATFORM
+	help
+	  Enables support for NAND controller on ts72xx SBCs.
+	  These only set's platform data. The real driver is gen_nand.
+
 comment "Misc"
 
 config MTD_SM_COMMON

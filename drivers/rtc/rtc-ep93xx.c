@@ -8,6 +8,7 @@
 
 #include <linux/module.h>
 #include <linux/rtc.h>
+#include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/io.h>
 #include <linux/gfp.h>
@@ -148,9 +149,18 @@ static int ep93xx_rtc_probe(struct platform_device *pdev)
 	return devm_rtc_register_device(ep93xx_rtc->rtc);
 }
 
+#ifdef CONFIG_OF
+static const struct of_device_id ep93xx_rtc_of_ids[] = {
+	{ .compatible = "cirrus,ep93xx-rtc" },
+	{},
+};
+MODULE_DEVICE_TABLE(of, ep93xx_rtc_of_ids);
+#endif
+
 static struct platform_driver ep93xx_rtc_driver = {
 	.driver		= {
 		.name	= "ep93xx-rtc",
+		.of_match_table = of_match_ptr(ep93xx_rtc_of_ids),
 	},
 	.probe		= ep93xx_rtc_probe,
 };

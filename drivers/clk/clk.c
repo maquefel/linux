@@ -5,6 +5,7 @@
  *
  * Standard functionality for the common clock API.  See Documentation/driver-api/clk.rst
  */
+#define DEBUG
 
 #include <linux/clk.h>
 #include <linux/clk-provider.h>
@@ -1942,15 +1943,21 @@ static struct clk_core *clk_calc_new_rates(struct clk_core *core,
 		clk_core_init_rate_req(core, &req);
 
 		ret = clk_core_determine_round_nolock(core, &req);
-		if (ret < 0)
+		if (ret < 0) {
+			pr_debug("%s: %s not passing clk_core_determine_round_nolock\n",
+				 __func__, core->name);
 			return NULL;
+		}
 
 		best_parent_rate = req.best_parent_rate;
 		new_rate = req.rate;
 		parent = req.best_parent_hw ? req.best_parent_hw->core : NULL;
 
-		if (new_rate < min_rate || new_rate > max_rate)
+		if (new_rate < min_rate || new_rate > max_rate) {
+			pr_debug("%s: %s not passing rate limits\n",
+				 __func__, core->name);
 			return NULL;
+		}
 	} else if (!parent || !(core->flags & CLK_SET_RATE_PARENT)) {
 		/* pass-through clock without adjustable parent */
 		core->new_rate = core->rate;
@@ -2179,8 +2186,10 @@ static int clk_core_set_rate_nolock(struct clk_core *core,
 
 	/* calculate new rates and get the topmost changed clock */
 	top = clk_calc_new_rates(core, req_rate);
-	if (!top)
+	if (!top) {
+		pr_debug("%s : no top in clk_calc_new_rates\n", __func__);
 		return -EINVAL;
+	}
 
 	ret = clk_pm_runtime_get(core);
 	if (ret)

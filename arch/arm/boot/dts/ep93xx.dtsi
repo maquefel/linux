@@ -6,7 +6,7 @@
 / {
 	compatible = "cirrus,ep93xx";
 
-	amba {
+	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges;
@@ -19,13 +19,8 @@
 			#clock-cells = <1>;
 			#reset-cells = <1>;
 			
-			syscon-reboot {
-				compatible = "syscon-reboot";
-				regmap = <&syscon>;
-				/* GLOBAL_RESET register */
-				offset = <0x80>;
-				/* RESET_GLOBAL | RESET_CPU1 */
-				mask = <0x80000000>;
+			ep93xx-reboot {
+				compatible = "cirrus,ep93xx-reboot";
 			};
 		};
 
@@ -52,6 +47,93 @@
 			reg = <0x80810000 0x100>;
 			interrupt-parent = <&vic1>;
 			interrupts = <19>;
+		};
+		
+		gpio0: gpio@80840000 {
+			compatible = "cirrus,ep93xx-gpio";
+			chip-label = "A";
+			reg = <0x80840000 0x04>,
+			<0x80840010 0x04>,
+			<0x80840090 0x1c>;
+			reg-names = "data", "dir", "intr";
+			gpio-controller;
+			interrupt-controller;
+			interrupt-parent = <&vic1>;
+			interrupts = <27>;
+		};
+
+		gpio1: gpio@80840004 {
+			compatible = "cirrus,ep93xx-gpio";
+			chip-label = "B";
+			reg = <0x80840004 0x04>,
+			<0x80840014 0x04>,
+			<0x808400ac 0x1c>;
+			reg-names = "data", "dir", "intr";
+			gpio-controller;
+			interrupt-controller;
+			interrupt-parent = <&vic1>;
+			interrupts = <27>;
+		};
+
+		gpio2: gpio@80840008 {
+			compatible = "cirrus,ep93xx-gpio";
+			chip-label = "C";
+			reg = <0x80840008 0x04>,
+			<0x80840018 0x04>;
+			reg-names = "data", "dir";
+			gpio-controller;
+		};
+
+		gpio3: gpio@8084000c {
+			compatible = "cirrus,ep93xx-gpio";
+			chip-label = "D";
+			reg = <0x8084000c 0x04>,
+			<0x8084001c 0x04>;
+			reg-names = "data", "dir";
+			gpio-controller;
+		};
+
+		gpio4: gpio@80840020 {
+			compatible = "cirrus,ep93xx-gpio";
+			chip-label = "E";
+			reg = <0x80840020 0x04>,
+			<0x80840024 0x04>;
+			reg-names = "data", "dir";
+			gpio-controller;
+		};
+
+		gpio5: gpio@80840030 {
+			compatible = "cirrus,ep93xx-gpio";
+			chip-label = "F";
+			reg = <0x80840030 0x04>,
+			<0x80840034 0x04>,
+			<0x8084004c 0x1c>;
+			reg-names = "data", "dir", "intr";
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&vic0 19>, <&vic0 20>,
+				<&vic0 21>, <&vic0 22>,
+				<&vic1 15>, <&vic1 16>,
+				<&vic1 17>, <&vic1 18>;
+		};
+
+		gpio6: gpio@80840038 {
+			compatible = "cirrus,ep93xx-gpio";
+			chip-label = "G";
+			reg = <0x80840038 0x04>,
+			<0x8084003c 0x04>;
+			reg-names = "data", "dir";
+			gpio-controller;
+		};
+
+		gpio7: gpio@80840040 {
+			compatible = "cirrus,ep93xx-gpio";
+			label = "H";
+			reg = <0x80840040 0x04>,
+			<0x80840044 0x04>;
+			reg-names = "data", "dir";
+			gpio-controller;
 		};
 
 		uart0: uart@808c0000 {
@@ -92,6 +174,43 @@
 			reg = <0x80010000 0x10000>;
 			interrupt-parent = <&vic1>;
 			interrupts = <7>;
+		};
+
+		rtc0: rtc@80920000 {
+			compatible = "cirrus,ep93xx-rtc";
+			reg = <0x80920000 0x100>;
+		};
+
+		spi0: spi@808a0000 {
+			compatible = "cirrus,ep93xx-spi";
+			reg = <0x808a0000 0x18>;
+			interrupt-parent = <&vic1>;
+			interrupts = <21>;
+			clocks = <&syscon EP93XX_CLK_SPI>;
+			clock-names = "ep93xx-spi.0";
+			gpios = <&gpio5 2 0>;
+			use_dma;
+		};
+		
+		wdt0: wdt@80940000 {
+			compatible = "cirrus,ep93xx-wdt";
+			reg = <0x80940000 0x08>;
+		};
+
+		pwm0: pwm@80910000 {
+			compatible = "cirrus,ep93xx-pwm";
+			reg = <0x80910000 0x10>;
+			clocks = <&syscon EP93XX_CLK_PWM>;
+			clock-names = "pwm_clk";
+			status = "disabled";
+		};
+
+		pwm1: pwm@80910020 {
+			compatible = "cirrus,ep93xx-pwm";
+			reg = <0x80910020 0x10>;
+			clocks = <&syscon EP93XX_CLK_PWM>;
+			clock-names = "pwm_clk";
+			status = "disabled";
 		};
 	};
 };

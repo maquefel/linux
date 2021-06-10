@@ -1263,10 +1263,21 @@ int gpiochip_irq_map(struct irq_domain *d, unsigned int irq,
 		irq_set_nested_thread(irq, 1);
 	irq_set_noprobe(irq);
 
-	if (gc->irq.num_parents == 1)
+	pr_err("%s\n", __func__);
+	if (gc->irq.num_parents == 1) {
+		pr_err("%s : num_parents == 1 irq_set_parent(%d, %d)\n", 
+			__func__,
+			irq,
+			gc->irq.parents[0]);
 		ret = irq_set_parent(irq, gc->irq.parents[0]);
-	else if (gc->irq.map)
+	} else if (gc->irq.map) {
+		pr_err("%s : gc->irq.map irq_set_parent(%d, %d)\n", 
+			__func__,
+			irq,
+			gc->irq.map[hwirq]);
+		
 		ret = irq_set_parent(irq, gc->irq.map[hwirq]);
+	}
 
 	if (ret < 0)
 		return ret;
@@ -3680,9 +3691,12 @@ int gpiod_count(struct device *dev, const char *con_id)
 {
 	int count = -ENOENT;
 
-	if (IS_ENABLED(CONFIG_OF) && dev && dev->of_node)
+	pr_err("%s : dev=0x%px dev->of_node=0x%px fucky fucky fucky\n", __func__, dev, dev->of_node);
+
+	if (IS_ENABLED(CONFIG_OF) && dev && dev->of_node) {
+		pr_err("%s : of_gpio_get_count\n", __func__);
 		count = of_gpio_get_count(dev, con_id);
-	else if (IS_ENABLED(CONFIG_ACPI) && dev && ACPI_HANDLE(dev))
+	} else if (IS_ENABLED(CONFIG_ACPI) && dev && ACPI_HANDLE(dev))
 		count = acpi_gpio_count(dev, con_id);
 
 	if (count < 0)

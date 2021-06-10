@@ -2507,6 +2507,8 @@ static int of_spi_get_gpio_numbers(struct spi_controller *ctlr)
 	if (!np)
 		return 0;
 
+	pr_err("%s\n", __func__);
+
 	nb = of_gpio_named_count(np, "cs-gpios");
 	ctlr->num_chipselect = max_t(int, nb, ctlr->num_chipselect);
 
@@ -2550,7 +2552,10 @@ static int spi_get_gpio_descs(struct spi_controller *ctlr)
 	unsigned long native_cs_mask = 0;
 	unsigned int num_cs_gpios = 0;
 
+        pr_err("%s\n", __func__);
+
 	nb = gpiod_count(dev, "cs");
+	pr_err("%s nb=%d\n", __func__, nb);
 	ctlr->num_chipselect = max_t(int, nb, ctlr->num_chipselect);
 
 	/* No GPIOs at all is fine, else return the error */
@@ -2664,6 +2669,7 @@ int spi_register_controller(struct spi_controller *ctlr)
 	if (!dev)
 		return -ENODEV;
 
+	// pr_err("%s : of_node=0x%px\n", __func__, ctrl->dev.of_node);
 	/*
 	 * Make sure all necessary hooks are implemented before registering
 	 * the SPI controller.
@@ -2725,6 +2731,8 @@ int spi_register_controller(struct spi_controller *ctlr)
 	dev_set_name(&ctlr->dev, "spi%u", ctlr->bus_num);
 
 	if (!spi_controller_is_slave(ctlr)) {
+	        pr_err("%s : !spi_controller_is_slave\n", __func__);
+
 		if (ctlr->use_gpio_descriptors) {
 			status = spi_get_gpio_descs(ctlr);
 			if (status)
@@ -2742,11 +2750,15 @@ int spi_register_controller(struct spi_controller *ctlr)
 		}
 	}
 
+	pr_err("%s : 2\n", __func__);
+
+
 	/*
 	 * Even if it's just one always-selected device, there must
 	 * be at least one chipselect.
 	 */
 	if (!ctlr->num_chipselect) {
+		pr_err("%s : num_chipselect -EINVAL\n", __func__);
 		status = -EINVAL;
 		goto free_bus_id;
 	}

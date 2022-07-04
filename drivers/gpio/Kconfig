@@ -756,6 +756,15 @@ config GPIO_AMD_FCH
 	  needs to be provided with platform specific configuration.
 	  (See eg. CONFIG_PCENGINES_APU2.)
 
+config GPIO_TS_DIO24
+	tristate "TS-DIO24 GPIO support"
+	depends on GPIOLIB && MACH_TS72XX
+	select GPIO_GENERIC
+	help
+	  Say Y here if you have a TS-DIO24 PC/104 peripheral.
+
+	  Board setup code must specify peripheral I/O address (JP1 and JP2).
+
 config GPIO_MSC313
 	bool "MStar MSC313 GPIO support"
 	depends on ARCH_MSTARV7

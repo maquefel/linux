@@ -11,7 +11,6 @@
 
 	nand-parts@0 {
 		compatible = "technologic,ts72xx-nand", "gen_nand";
-		// compatible = "gen_nand";
 		reg = <0x60000000 0x8000000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -25,7 +24,6 @@
 		partition@20000 {
                         label = "Linux";
                         reg = <0x00020000 0x07d00000>;
-                        read-only;
                 };
 
                 partition@7d20000 {
@@ -33,6 +31,20 @@
 			reg = <0x07d20000 0x002e0000>;
                         read-only;
                 };
+	};
+
+	rtc1: rtc@10800000 {
+		compatible = "dallas,rtc-m48t86";
+		reg = <0x10800000 0x1>,
+		<0x11700000 0x1>;
+	};
+
+	gpio8: gpio@11e00000 {
+		compatible = "technologic,tsdio24-gpio";
+		chip-label = "tsdio24";
+		reg = <0x11e00100 0x04>;
+		gpio-controller;
+		#gpio-cells = <2>;
 	};
 };
 

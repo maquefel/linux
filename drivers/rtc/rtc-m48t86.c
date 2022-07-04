@@ -15,6 +15,7 @@
 #include <linux/platform_device.h>
 #include <linux/bcd.h>
 #include <linux/io.h>
+#include <linux/of.h>
 
 #define M48T86_SEC		0x00
 #define M48T86_SECALRM		0x01
@@ -269,9 +270,16 @@ static int m48t86_rtc_probe(struct platform_device *pdev)
 	return 0;
 }
 
+static const struct of_device_id m48t86_rtc_match[] = {
+	{ .compatible = "dallas,rtc-m48t86" },
+	{ /* end of table */ },
+};
+MODULE_DEVICE_TABLE(of, m48t86_rtc_match);
+
 static struct platform_driver m48t86_rtc_platform_driver = {
 	.driver		= {
 		.name	= "rtc-m48t86",
+		.of_match_table = m48t86_rtc_match,
 	},
 	.probe		= m48t86_rtc_probe,
 };

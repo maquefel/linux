@@ -219,7 +219,7 @@ struct ep93xx_dma_engine {
 #define INTERRUPT_NEXT_BUFFER	2
 
 	size_t			num_channels;
-	struct ep93xx_dma_chan	channels[];
+	struct ep93xx_dma_chan	*channels;
 };
 
 static inline struct device *chan2dev(struct ep93xx_dma_chan *edmac)
@@ -879,13 +879,21 @@ static int ep93xx_dma_alloc_chan_resources(struct dma_chan *chan)
 
 	/* Sanity check the channel parameters */
 	if (!edmac->edma->m2m) {
-		if (!data)
+		if (!data) {
+			pr_err("%s : !data\n", __func__);
 			return -EINVAL;
+		}
 		if (data->port < EP93XX_DMA_I2S1 ||
-		    data->port > EP93XX_DMA_IRDA)
+		    data->port > EP93XX_DMA_IRDA) {
+			pr_err("%s : !< EP93XX_DMA_I2S1 > EP93XX_DMA_IRDA data->port=%d\n", 
+			       __func__,
+				data->port);
 			return -EINVAL;
-		if (data->direction != ep93xx_dma_chan_direction(chan))
+		}
+		if (data->direction != ep93xx_dma_chan_direction(chan)) {
+			pr_err("%s : direction !=\n", __func__);
 			return -EINVAL;
+		}
 	} else {
 		if (data) {
 			switch (data->port) {
@@ -899,17 +907,21 @@ static int ep93xx_dma_alloc_chan_resources(struct dma_chan *chan)
 			}
 		}
 	}
+	
+	pr_err("%s : fucky fucky\n", __func__);
 
 	if (data && data->name)
 		name = data->name;
 
-	ret = clk_enable(edmac->clk);
+	ret = clk_prepare_enable(edmac->clk);
 	if (ret)
 		return ret;
 
 	ret = request_irq(edmac->irq, ep93xx_dma_interrupt, 0, name, edmac);
 	if (ret)
 		goto fail_clk_disable;
+
+	pr_err("%s : fucky fucky fucky\n", __func__);
 
 	spin_lock_irq(&edmac->lock);
 	dma_cookie_init(&edmac->chan);
@@ -942,7 +954,7 @@ static int ep93xx_dma_alloc_chan_resources(struct dma_chan *chan)
 fail_free_irq:
 	free_irq(edmac->irq, edmac);
 fail_clk_disable:
-	clk_disable(edmac->clk);
+	clk_disable_unprepare(edmac->clk);
 
 	return ret;
 }
@@ -975,7 +987,7 @@ static void ep93xx_dma_free_chan_resources(struct dma_chan *chan)
 	list_for_each_entry_safe(desc, d, &list, node)
 		kfree(desc);
 
-	clk_disable(edmac->clk);
+	clk_disable_unprepare(edmac->clk);
 	free_irq(edmac->irq, edmac);
 }
 
@@ -1321,20 +1333,88 @@ static void ep93xx_dma_issue_pending(struct dma_chan *chan)
 	ep93xx_dma_advance_work(to_ep93xx_dma_chan(chan));
 }
 
-static int __init ep93xx_dma_probe(struct platform_device *pdev)
-{
-	struct ep93xx_dma_platform_data *pdata = dev_get_platdata(&pdev->dev);
-	struct ep93xx_dma_engine *edma;
-	struct dma_device *dma_dev;
-	size_t edma_size;
-	int ret, i;
 
-	edma_size = pdata->num_channels * sizeof(struct ep93xx_dma_chan);
-	edma = kzalloc(sizeof(*edma) + edma_size, GFP_KERNEL);
-	if (!edma)
+#ifdef CONFIG_OF
+static const struct of_device_id ep93xx_dma_of_ids[] = {
+	{ .compatible = "cirrus,ep93xx-dma-m2p", .data = (const void *)M2P_DMA },
+	{ .compatible = "cirrus,ep93xx-dma-m2m", .data = (const void *)M2M_DMA },
+	{},
+};
+MODULE_DEVICE_TABLE(of, ep93xx_dma_of_ids);
+
+static int ep93xx_dma_of_probe(struct platform_device *pdev,
+			struct ep93xx_dma_engine *edma)
+{
+	struct device_node *np = pdev->dev.of_node;
+	const struct of_device_id *match = of_match_node(ep93xx_dma_of_ids, pdev->dev.of_node);
+	struct dma_device *dma_dev = &edma->dma_dev;
+	int num_channels;
+	int i, ret;
+
+	ret = of_property_read_u32(np, "dma-channels", &num_channels);
+	if (ret) {
+		dev_err(&pdev->dev, "failed to read dma-channels\n");
+		return ret;
+	}
+
+	edma->channels = devm_kzalloc(&pdev->dev, 
+				      num_channels * sizeof(struct ep93xx_dma_chan),
+				      GFP_KERNEL);
+	if (!edma->channels)
 		return -ENOMEM;
 
-	dma_dev = &edma->dma_dev;
+	edma->num_channels = num_channels;
+	edma->m2m = match->data;
+
+	INIT_LIST_HEAD(&dma_dev->channels);
+	for (i = 0; i < num_channels; i++) {
+		struct ep93xx_dma_chan *edmac = &edma->channels[i];
+
+		edmac->chan.device = dma_dev;
+		edmac->regs = devm_platform_ioremap_resource(pdev, i);
+		edmac->irq = platform_get_irq(pdev, i);
+		edmac->edma = edma;
+
+		edmac->clk = of_clk_get(np, i);
+
+		if (IS_ERR(edmac->clk)) {
+			dev_warn(&pdev->dev, "failed to get clock\n");
+			continue;
+		}
+
+		spin_lock_init(&edmac->lock);
+		INIT_LIST_HEAD(&edmac->active);
+		INIT_LIST_HEAD(&edmac->queue);
+		INIT_LIST_HEAD(&edmac->free_list);
+		tasklet_setup(&edmac->tasklet, ep93xx_dma_tasklet);
+
+		list_add_tail(&edmac->chan.device_node,
+			      &dma_dev->channels);
+	}
+
+	return 0;
+}
+#else
+static int ep93xx_dma_of_probe(struct platform_device *pdev,
+			struct ep93xx_dma_engine *edma)
+{
+	return -EINVAL;
+}
+#endif
+
+static int ep93xx_init_from_pdata(struct platform_device *pdev,
+				  struct ep93xx_dma_engine *edma)
+{
+	struct ep93xx_dma_platform_data *pdata = dev_get_platdata(&pdev->dev);
+	struct dma_device *dma_dev = &edma->dma_dev;
+	int i;
+
+	edma->channels = devm_kzalloc(&pdev->dev, 
+				      pdata->num_channels * sizeof(struct ep93xx_dma_chan),
+				      GFP_KERNEL);
+	if (!edma->channels)
+		return -ENOMEM;
+
 	edma->m2m = platform_get_device_id(pdev)->driver_data;
 	edma->num_channels = pdata->num_channels;
 
@@ -1349,6 +1429,7 @@ static int __init ep93xx_dma_probe(struct platform_device *pdev)
 		edmac->edma = edma;
 
 		edmac->clk = clk_get(NULL, cdata->name);
+
 		if (IS_ERR(edmac->clk)) {
 			dev_warn(&pdev->dev, "failed to get clock for %s\n",
 				 cdata->name);
@@ -1364,6 +1445,28 @@ static int __init ep93xx_dma_probe(struct platform_device *pdev)
 		list_add_tail(&edmac->chan.device_node,
 			      &dma_dev->channels);
 	}
+
+	return 0;
+}
+
+static int __init ep93xx_dma_probe(struct platform_device *pdev)
+{
+	struct ep93xx_dma_engine *edma;
+	struct dma_device *dma_dev;
+	int ret, i;
+
+	edma = devm_kzalloc(&pdev->dev, sizeof(*edma), GFP_KERNEL);
+
+	if (platform_get_device_id(pdev)) {
+		ret = ep93xx_init_from_pdata(pdev, edma);
+	} else {
+		ret = ep93xx_dma_of_probe(pdev, edma);
+	}
+
+	if (ret)
+		return ret;
+
+	dma_dev = &edma->dma_dev;
 
 	dma_cap_zero(dma_dev->cap_mask);
 	dma_cap_set(DMA_SLAVE, dma_dev->cap_mask);
@@ -1415,15 +1518,6 @@ static int __init ep93xx_dma_probe(struct platform_device *pdev)
 
 	return ret;
 }
-
-#ifdef CONFIG_OF
-static const struct of_device_id ep93xx_dma_of_ids[] = {
-	{ .compatible = "cirrus,ep93xx-dma-m2p", .data = (const void *)M2P_DMA },
-	{ .compatible = "cirrus,ep93xx-dma-m2m", .data = (const void *)M2M_DMA },
-	{},
-};
-MODULE_DEVICE_TABLE(of, ep93xx_dma_of_ids);
-#endif
 
 static const struct platform_device_id ep93xx_dma_driver_ids[] = {
 	{ "ep93xx-dma-m2p", 0 },
